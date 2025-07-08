@@ -1,0 +1,51 @@
+Jun 30 00:00:01 server CRON[1001]: (root) CMD (run-parts /etc/cron.hourly)
+Jun 30 00:10:05 server systemd[1]: Started Daily apt download activities.
+Jun 30 00:12:22 server sshd[1023]: Connection closed by authenticating user alice 10.0.0.5 port 51234 [preauth]
+Jun 30 01:05:03 server CRON[1102]: (root) CMD (run-parts /etc/cron.hourly)
+Jun 30 01:45:19 server sshd[1204]: Failed password for invalid user admin from 198.51.100.11 port 53411 ssh2
+Jun 30 01:45:21 server sshd[1204]: Failed password for invalid user admin from 198.51.100.11 port 53411 ssh2
+Jun 30 01:45:23 server sshd[1204]: Failed password for invalid user admin from 198.51.100.11 port 53411 ssh2
+Jun 30 02:10:34 server sshd[1306]: Failed password for root from 192.0.2.15 port 52672 ssh2
+Jun 30 02:11:02 server sshd[1306]: Failed password for root from 192.0.2.15 port 52672 ssh2
+Jun 30 02:11:30 server sshd[1306]: Failed password for root from 192.0.2.15 port 52672 ssh2
+Jun 30 02:40:17 server sshd[1409]: Failed password for invalid user test from 203.0.113.55 port 49823 ssh2
+Jun 30 02:40:20 server sshd[1409]: Failed password for invalid user test from 203.0.113.55 port 49823 ssh2
+Jun 30 02:40:22 server sshd[1409]: Failed password for invalid user test from 203.0.113.55 port 49823 ssh2
+Jun 30 03:11:44 server CRON[1450]: (root) CMD (run-parts /etc/cron.hourly)
+Jun 30 03:15:09 server sshd[1501]: Failed password for invalid user guest from 198.51.100.23 port 51211 ssh2
+Jun 30 03:15:12 server sshd[1501]: Failed password for invalid user guest from 198.51.100.23 port 51211 ssh2
+Jun 30 03:15:14 server sshd[1501]: Failed password for invalid user guest from 198.51.100.23 port 51211 ssh2
+Jun 30 03:45:06 server sshd[1554]: Accepted password for root from 198.51.100.23 port 51211 ssh2
+Jun 30 03:45:06 server sshd[1554]: pam_unix(sshd:session): session opened for user root by (uid=0)
+Jun 30 03:45:07 server sudo:   root : TTY=pts/1 ; PWD=/root ; USER=root ; COMMAND=/bin/apt update -y
+Jun 30 03:45:08 server useradd[1561]: new user: name=hacker, UID=1002, GID=1002, home=/home/hacker, shell=/bin/bash
+Jun 30 03:45:12 server sshd[1554]: Received disconnect from 198.51.100.23 port 51211:11: disconnected by user
+Jun 30 03:45:12 server sshd[1554]: Disconnected from user root 198.51.100.23 port 51211
+Jun 30 04:10:01 server CRON[1603]: (root) CMD (run-parts /etc/cron.hourly)
+Jun 30 04:20:05 server systemd[1]: Finished Daily apt download activities.
+Jun 30 04:30:22 server apache2[1701]: 198.51.100.23 - - [30/Jun/2025:04:30:22 +0200] "GET /?id=1%20OR%201=1-- HTTP/1.1" 200 512 "-" "sqlmap"
+Jun 30 04:30:23 server apache2[1701]: 198.51.100.23 - - [30/Jun/2025:04:30:23 +0200] "GET /admin HTTP/1.1" 403 720 "-" "sqlmap"
+Jun 30 05:00:03 server CRON[1801]: (root) CMD (run-parts /etc/cron.hourly)
+Jun 30 05:15:44 server sshd[1856]: Failed password for invalid user admin from 203.0.113.120 port 56782 ssh2
+Jun 30 05:16:01 server sshd[1856]: Received disconnect from 203.0.113.120 port 56782:11: Bye Bye
+Jun 30 05:16:01 server sshd[1856]: Disconnected from 203.0.113.120 port 56782
+Jun 30 05:35:16 server sshd[1902]: Failed password for root from 192.0.2.30 port 60322 ssh2
+Jun 30 05:35:23 server sshd[1902]: Failed password for root from 192.0.2.30 port 60322 ssh2
+Jun 30 05:35:31 server sshd[1902]: Failed password for root from 192.0.2.30 port 60322 ssh2
+Jun 30 06:00:01 server CRON[2001]: (root) CMD (run-parts /etc/cron.hourly)
+Jun 30 06:10:45 server sshd[2052]: Failed password for invalid user oracle from 203.0.113.90 port 60211 ssh2
+Jun 30 06:10:47 server sshd[2052]: Failed password for invalid user oracle from 203.0.113.90 port 60211 ssh2
+Jun 30 06:10:49 server sshd[2052]: Failed password for invalid user oracle from 203.0.113.90 port 60211 ssh2
+Jun 30 06:40:22 server apache2[2101]: 203.0.113.90 - - [30/Jun/2025:06:40:22 +0200] "GET /etc/passwd HTTP/1.1" 404 230 "-" "Mozilla/5.0"
+Jun 30 06:40:45 server apache2[2101]: 203.0.113.90 - - [30/Jun/2025:06:40:45 +0200] "POST /login HTTP/1.1" 200 1024 "-" "Mozilla/5.0"
+Jun 30 07:00:03 server CRON[2201]: (root) CMD (run-parts /etc/cron.hourly)
+Jun 30 07:15:42 server systemd[1]: Completed Daily apt download activities.
+Jun 30 07:20:14 server sshd[2255]: Failed password for invalid user git from 198.51.100.111 port 63321 ssh2
+Jun 30 07:20:20 server sshd[2255]: Failed password for invalid user git from 198.51.100.111 port 63321 ssh2
+Jun 30 07:20:25 server sshd[2255]: Failed password for invalid user git from 198.51.100.111 port 63321 ssh2
+Jun 30 07:30:44 server sshd[2304]: Accepted publickey for alice from 10.0.0.5 port 51234 ssh2: RSA SHA256:...
+Jun 30 07:30:44 server sshd[2304]: pam_unix(sshd:session): session opened for user alice by (uid=0)
+Jun 30 07:45:01 server CRON[2401]: (root) CMD (run-parts /etc/cron.hourly)
+Jun 30 08:00:05 server authpriv.notice sudo: alice : TTY=pts/2 ; PWD=/home/alice ; USER=root ; COMMAND=/usr/bin/apt update
+Jun 30 08:05:11 server sshd[2503]: Connection closed by authenticating user alice 10.0.0.5 port 51234 [preauth]
+Jun 30 08:05:11 server sshd[2503]: pam_unix(sshd:session): session closed for user alice

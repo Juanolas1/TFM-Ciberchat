@@ -112,9 +112,9 @@ const Register = () => {
       <MDBRow className='d-flex justify-content-center align-items-center h-100'>
         <MDBCol col='12' className='m-3'>
           <MDBCard className='bg-dark text-white my-5 mx-auto' style={{ borderRadius: '1rem', maxWidth: '500px' }}>
-            <MDBCardBody className='p-5 d-flex flex-column align-items-center mx-auto w-100'>
-              <h2 className="fw-bold mb-2 text-uppercase">Registro</h2>
-              <p className="text-white-50 mb-4">Crea una nueva cuenta</p>
+            <MDBCardBody className='p-5 d-flex flex-column align-items-center mx-auto w-100 form-white'>
+                <h2 className="fw-bold mb-2 text-uppercase">Registro</h2>
+              <p className="text-white-50 mb-4">Crea una cuenta nueva</p>
               
               <form onSubmit={handleSubmit} style={{ width: '100%' }}>
                 <MDBRow>
@@ -218,7 +218,7 @@ const Register = () => {
               </form>
               
               <div className='mt-3'>
-                <p className="mb-0">¿Ya tienes una cuenta? <Link to="/login" className="text-white-50 fw-bold">Iniciar Sesión</Link></p>
+                <p className="mb-0">¿Ya tienes una cuenta? <Link to="/login" className="text-white-50 fw-bold">Iniciar sesión</Link></p>
               </div>
             </MDBCardBody>
           </MDBCard>

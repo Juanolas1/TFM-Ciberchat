@@ -1,67 +1,256 @@
-/* Estilos específicos para el Dashboard */
+/* Dashboard Container */
 .dashboard-container {
-  background-color: #f5f5f5;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   padding: 20px 0;
-}
-
-.dashboard-container .card {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.dashboard-container .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
-
-.dashboard-container .btn {
-  transition: all 0.2s ease;
-}
-
-.dashboard-container .btn:hover {
-  transform: scale(1.05);
-}
-
-/* Estilo personalizado para la alerta */
-.alert-info-custom {
   position: relative;
-  padding: 0.75rem 1.25rem;
-  margin-bottom: 1rem;
-  border: 1px solid transparent;
-  border-radius: 0.25rem;
-  color: #0c5460;
-  background-color: #d1ecf1;
-  border-color: #bee5eb;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
-.alert-info-custom .btn-close {
-  padding: 0.5rem 0.5rem;
-  margin: -0.5rem -0.5rem -0.5rem auto;
-  background: transparent;
-  border: 0;
-  font-size: 1.25rem;
-  opacity: 0.5;
-  cursor: pointer;
+.dashboard-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.05"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.05"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.03"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.03"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.03"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+  pointer-events: none;
 }
 
-.alert-info-custom .btn-close:hover {
-  opacity: 0.75;
-}
-
-/* Tarjetas de características */
-.feature-card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  height: 100%;
+/* Main Card */
+.guardian-main-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.guardian-main-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* Header Section */
+.guardian-header {
+  margin-bottom: 2rem;
+}
+
+.guardian-logo {
+  position: relative;
+}
+
+.guardian-icon {
+  color: #667eea;
+  text-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.guardian-title {
+  color: #2d3748;
+  font-weight: 700;
+  font-size: 3rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.guardian-subtitle {
+  color: #4a5568;
+  font-size: 1.2rem;
+  font-weight: 300;
+  opacity: 0.8;
+}
+
+/* Action Buttons */
+.guardian-actions {
+  margin: 2rem 0;
+}
+
+.guardian-btn {
+  min-width: 180px;
+  padding: 12px 30px;
+  border-radius: 50px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.guardian-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.guardian-btn:hover::before {
+  left: 100%;
+}
+
+.guardian-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Features Section */
+.guardian-features {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 2px solid rgba(102, 126, 234, 0.1);
+}
+
+.features-title {
+  color: #2d3748;
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+
+.feature-card {
+  background: linear-gradient(145deg, #ffffff, #f7fafc);
+  border-radius: 15px;
+  padding: 2rem 1.5rem;
+  height: 100%;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.feature-card:hover::before {
+  transform: scaleX(1);
 }
 
 .feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 35px rgba(102, 126, 234, 0.15);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.feature-icon {
+  color: #667eea;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover .feature-icon {
+  transform: scale(1.1);
+  color: #764ba2;
+}
+
+.feature-title {
+  color: #2d3748;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.feature-description {
+  color: #4a5568;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Stats Section */
+.guardian-stats {
+  border-top: 2px solid rgba(102, 126, 234, 0.1);
+}
+
+.stat-item {
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.stat-item:hover {
   transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+  color: #667eea;
+  font-weight: 700;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+.stat-label {
+  color: #4a5568;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .guardian-title {
+    font-size: 2.5rem;
+  }
+  
+  .guardian-subtitle {
+    font-size: 1rem;
+  }
+  
+  .guardian-btn {
+    min-width: 160px;
+    margin-bottom: 1rem;
+  }
+  
+  .feature-card {
+    margin-bottom: 1.5rem;
+  }
+  
+  .stat-number {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .guardian-title {
+    font-size: 2rem;
+  }
+  
+  .guardian-btn {
+    min-width: 140px;
+    padding: 10px 20px;
+  }
+  
+  .feature-card {
+    padding: 1.5rem 1rem;
+  }
 }

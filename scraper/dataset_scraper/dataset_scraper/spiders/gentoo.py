@@ -1,6 +1,5 @@
 import scrapy
 from scrapy import Request
-from scrapy.loader import ItemLoader
 from dataset_scraper.items import DatasetscraperItem, AnswerItem
 import re
 import logging
@@ -86,8 +85,14 @@ class GentooSpider(scrapy.Spider):
             title = topic.xpath('text()').get()
             if title:
                 title = title.strip()
-                # Buscar "solved" en el título independientemente de mayúsculas/minúsculas
-                if re.search(r'solved', title, re.IGNORECASE):
+                
+                # Patrón mejorado para detectar "solved" en distintos formatos pero no "unsolved"
+                # Busca "solved" solo, entre paréntesis, corchetes, llaves o comillas
+                is_solved = bool(re.search(r'(\[solved\]|\(solved\)|{solved}|"solved"|^solved| solved\b|\bsolved\b)', title, re.IGNORECASE))
+                is_unsolved = bool(re.search(r'unsolved', title, re.IGNORECASE))
+                
+                # Solo procesar los temas que están marcados como solved pero no como unsolved
+                if is_solved and not is_unsolved:
                     solved_topics_found += 1
                     topic_url = response.urljoin(topic.xpath('@href').get())
                     logging.info(f"Encontrado tema solved #{solved_topics_found}: {title} - {topic_url}")
@@ -107,99 +112,108 @@ class GentooSpider(scrapy.Spider):
             next_forum_url = self.move_to_next_forum()
             if next_forum_url:
                 yield Request(url=next_forum_url, callback=self.parse)
-    
+        
     def parse_topic(self, response):
-        """Extrae toda la información detallada de un tema."""
+        """Extrae toda la información detallada de un tema, capturando correctamente fecha de publicación y edición."""
         logging.info(f"Procesando tema: {response.url}")
         
-        try:
-            # Crear un DatasetscraperItem
-            loader = ItemLoader(item=DatasetscraperItem(), response=response)
+        # Creamos el ítem directamente sin usar ItemLoader
+        result = DatasetscraperItem()
+        result['url'] = response.url
+        
+        # Título del tema
+        title = response.xpath('//a[@class="maintitle"]/text()').get()
+        if title:
+            result['title'] = title.strip()
+        
+        # Todas las filas de posts
+        post_rows = response.xpath(
+            '//table[@class="forumline"]/tr[td[contains(@class,"row1") or contains(@class,"row2")]]'
+        )
+        
+        if not post_rows:
+            logging.warning(f"No se encontraron posts en {response.url}")
+            return
+        
+        # Primer post = pregunta
+        first = post_rows[0]
+        
+        # 1) ask: contenido HTML del mensaje, dentro de la segunda <td>
+        # 1) ask: unimos todo el texto de la segunda celda (excepto firmas y metadatos)
+        ask_html = ' '.join(
+            t.strip() for t in first.xpath(
+                './/td[contains(@class,"row")][2]//text()['
+                'not(ancestor::span[@class="gensmall"]) and '
+                'not(ancestor::span[contains(@class,"postdetails")]) and '
+                'not(ancestor::span[contains(@style,"color: navy")])'
+                ']'
+            ).getall()
+            if t.strip()
+        )
+        # Eliminar delimitador de 17 '_' y todo lo que venga después
+        ask_html = re.sub(r'_{17}[\s\S]*$', '', ask_html).strip()
+        result['ask'] = ask_html
+
+        
+        # 2) timestamp_creation: texto completo del <span class="postdetails"> solo en la segunda <td>
+        creation_text = first.xpath(
+            'string(.//td[contains(@class,"row")][2]//span[contains(@class,"postdetails")])'
+        ).get()
+        result['timestamp_creation'] = creation_text.strip() if creation_text else None
+        
+        # 3) timestamp_edit: texto completo del <span class="gensmall"> solo en la segunda <td>
+        edit_text = first.xpath(
+            'string(.//td[contains(@class,"row")][2]//span[contains(@class,"gensmall")])'
+        ).get()
+        result['timestamp_edit'] = edit_text.strip() if edit_text else None
+        
+        # 4) correct_answer e información adicional
+        result['correct_answer'] = None
+        result['other_information'] = {}
+        
+        # 5) respuestas (todas las demás filas)
+        answers = []
+        for row in post_rows[1:]:
+            answer = {}
             
-            # Extraer URL
-            loader.add_value('url', response.url)
+            # usuario
+            user = row.xpath('.//span[@class="name"]/b/text()').get()
+            if user:
+                answer['username'] = user.strip()
             
-            # Extraer título
-            title = response.xpath('//a[@class="maintitle"]/text()').get()
-            if title:
-                title = title.strip()
-                loader.add_value('title', title)
-                logging.info(f"Título: {title}")
+            # rango (primera línea de postdetails)
+            rank = row.xpath(
+                'string(.//td[contains(@class,"row")][1]//span[contains(@class,"postdetails")])'
+            ).get()
+            if rank:
+                answer['rank'] = rank.strip().split('\n')[0]
             
-            # Obtener todas las filas de la tabla que contienen los posts
-            all_post_rows = response.xpath('//table[@class="forumline"]/tr[td[contains(@class, "row1") or contains(@class, "row2")]]')
+            # published_at (misma postdetails)
+            pub_text = row.xpath(
+                'string(.//td[contains(@class,"row")][2]//span[contains(@class,"postdetails")])'
+            ).get()
+            if pub_text:
+                answer['published_at'] = pub_text.strip()
             
-            if all_post_rows:
-                # El primer post siempre es la pregunta
-                first_post = all_post_rows[0]
-                
-                # Extraer el texto completo de la pregunta
-                ask_text = first_post.xpath('.//span[@class="postbody"]').get()
-                if ask_text:
-                    loader.add_value('ask', ask_text)
-                
-                # Extraer timestamp de creación
-                creation_time = first_post.xpath('.//span[@class="postdetails"]/text()[contains(., "Publicado:")]').get()
-                if creation_time:
-                    creation_match = re.search(r'Publicado:\s*(.*?)(?:\s*$|\s*\n|\s*<)', creation_time)
-                    if creation_match:
-                        loader.add_value('timestamp_creation', creation_match.group(1).strip())
-                        logging.info(f"Timestamp de creación: {creation_match.group(1).strip()}")
-                
-                # Extraer timestamp de edición (si existe)
-                edit_elements = first_post.xpath('.//*[contains(text(), "Editado por")]')
-                for element in edit_elements:
-                    text = element.get()
-                    if text:
-                        edit_match = re.search(r'Editado por .* el\s*(.*?)(?:\s*$|\s*\n|\s*<)', text)
-                        if edit_match:
-                            loader.add_value('timestamp_edit', edit_match.group(1).strip())
-                            logging.info(f"Timestamp de edición: {edit_match.group(1).strip()}")
-                            break
-                
-                # Extraer todas las respuestas (excluyendo el primer post)
-                answer_rows = all_post_rows[1:] if len(all_post_rows) > 1 else []
-                answers = []
-                
-                for answer_row in answer_rows:
-                    answer_loader = ItemLoader(item=AnswerItem())
-                    
-                    # Extraer nombre de usuario
-                    username = answer_row.xpath('.//span[@class="name"]/b/text()').get()
-                    if username:
-                        answer_loader.add_value('username', username.strip())
-                    
-                    # Extraer rango
-                    rank_text = answer_row.xpath('.//span[@class="postdetails"]/text()').get()
-                    if rank_text:
-                        # El rango suele estar en la primera línea
-                        rank = rank_text.strip().split('\n')[0] if '\n' in rank_text else rank_text.strip()
-                        answer_loader.add_value('rank', rank)
-                    
-                    # Extraer fecha de publicación
-                    published_at = answer_row.xpath('.//span[@class="postdetails"]/text()[contains(., "Publicado:")]').get()
-                    if published_at:
-                        published_match = re.search(r'Publicado:\s*(.*?)(?:\s*$|\s*\n|\s*<)', published_at)
-                        if published_match:
-                            answer_loader.add_value('published_at', published_match.group(1).strip())
-                    
-                    # Extraer texto completo de la respuesta
-                    response_text = answer_row.xpath('.//span[@class="postbody"]').get()
-                    if response_text:
-                        answer_loader.add_value('response_text', response_text)
-                    
-                    # Añadir esta respuesta a la lista
-                    answers.append(answer_loader.load_item())
-                
-                # Añadir todas las respuestas al item principal
-                if answers:
-                    loader.add_value('answers', answers)
-                    logging.info(f"Encontradas {len(answers)} respuestas")
-                
-                # Generar el item completo
-                yield loader.load_item()
-            else:
-                logging.warning(f"No se encontraron posts en {response.url}")
-                
-        except Exception as e:
-            logging.error(f"Error al procesar {response.url}: {str(e)}")
+            # contenido HTML de la respuesta: tomamos específicamente el ÚLTIMO span.postbody
+            resp_html = ' '.join(
+                t.strip() for t in row.xpath(
+                    './/td[contains(@class,"row")][2]//text()['
+                    'not(ancestor::span[@class="gensmall"]) and '
+                    'not(ancestor::span[contains(@class,"postdetails")]) and '
+                    'not(ancestor::span[contains(@style,"color: navy")])'
+                    ']'
+                ).getall()
+                if t.strip()
+            )
+            resp_html = re.sub(r'_{17}[\s\S]*$', '', resp_html).strip()
+            if resp_html:
+                answer['response_text'] = resp_html.strip()
+            
+            answers.append(answer)
+        
+        if answers:
+            result['answers'] = answers
+            logging.info(f"Encontradas {len(answers)} respuestas")
+        
+        yield result

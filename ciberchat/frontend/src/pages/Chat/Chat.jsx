@@ -12,10 +12,19 @@ import {
   MDBInputGroup,
   MDBBtn,
   MDBTooltip,
-  MDBSpinner
+  MDBSpinner,
+  MDBModal,
+  MDBModalDialog,
+  MDBModalContent,
+  MDBModalHeader,
+  MDBModalTitle,
+  MDBModalBody,
+  MDBModalFooter,
+  MDBBadge
 } from "mdb-react-ui-kit";
 import { useAuth } from "../../context/AuthContext";
 import "./Chat.css";
+import MarkdownRenderer from '../../components/MarkdownRenderer';
 
 const cookies = new Cookies();
 
@@ -35,8 +44,21 @@ const Chat = () => {
   const [allChatMessages, setAllChatMessages] = useState({});
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
+  const fileInputRef = useRef(null);
+  
+  // Nuevos estados para manejar archivos
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+  const [viewingAttachment, setViewingAttachment] = useState(null);
+  
+  // Estados para streaming
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState(null);
+  
   // Referencia para rastrear si debemos reorganizar los chats después de enviar un mensaje
   const shouldReorderChatsRef = useRef(false);
+  // Referencia para rastrear si los mensajes se acaban de cargar
+  const messagesJustLoaded = useRef(true);
 
   // Obtener información del usuario actual
   useEffect(() => {
@@ -48,6 +70,7 @@ const Chat = () => {
         console.error("Error al obtener información del usuario:", error);
       }
     };
+
     fetchCurrentUser();
   }, [whoami]);
 
@@ -79,9 +102,14 @@ const Chat = () => {
     }
   }, [searchTerm, chats]);
 
-  // Scroll al último mensaje
+  // Scroll al último mensaje, con comportamiento condicional
   useEffect(() => {
-    scrollToBottom();
+    if (messagesJustLoaded.current) {
+      scrollToBottomInstant();
+      messagesJustLoaded.current = false;
+    } else {
+      scrollToBottomSmooth();
+    }
   }, [messages]);
 
   // Focus en el input de edición cuando se activa
@@ -91,7 +119,13 @@ const Chat = () => {
     }
   }, [editingChatId]);
 
-  const scrollToBottom = () => {
+  // Para scroll instantáneo (cuando se cargan mensajes)
+  const scrollToBottomInstant = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+  };
+
+  // Para scroll suave (cuando se envía un nuevo mensaje)
+  const scrollToBottomSmooth = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -145,13 +179,15 @@ const Chat = () => {
 
   // Función para obtener los mensajes de un chat
   const fetchMessages = async (id) => {
+    // Marcar que los mensajes se están cargando para usar scroll instantáneo
+    messagesJustLoaded.current = true;
+    
     try {
       // Actualizar la URL para reflejar el chat seleccionado
       if (id !== chatId) {
         navigate(`/chat/${id}`, { replace: true });
       }
       
-      // En un futuro, reemplazar con una llamada real a la API
       const response = await fetch(`/api/chats/${id}/messages/`, {
         headers: {
           "Content-Type": "application/json",
@@ -179,19 +215,22 @@ const Chat = () => {
             id: 1,
             content: "Hola, ¿en qué puedo ayudarte hoy?",
             sender: "assistant",
-            timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString()
+            timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+            attachments: []
           },
           {
             id: 2,
             content: "Tengo una consulta sobre programación",
             sender: "user",
-            timestamp: new Date(Date.now() - 59 * 60 * 1000).toISOString()
+            timestamp: new Date(Date.now() - 59 * 60 * 1000).toISOString(),
+            attachments: []
           },
           {
             id: 3,
             content: "¡Claro! ¿Qué te gustaría saber específicamente?",
             sender: "assistant",
-            timestamp: new Date(Date.now() - 58 * 60 * 1000).toISOString()
+            timestamp: new Date(Date.now() - 58 * 60 * 1000).toISOString(),
+            attachments: []
           }
         ];
         setMessages(mockMessages);
@@ -200,7 +239,6 @@ const Chat = () => {
           setCurrentChat(selectedChat);
         }
         
-        // Para el chat 1 de ejemplo, añadimos mensajes con contenido distinto para probar la búsqueda
         if (id === 1) {
           const pythonMessages = [
             ...mockMessages,
@@ -208,13 +246,15 @@ const Chat = () => {
               id: 4,
               content: "Me gustaría entender cómo funcionan los decoradores en Python",
               sender: "user",
-              timestamp: new Date(Date.now() - 57 * 60 * 1000).toISOString()
+              timestamp: new Date(Date.now() - 57 * 60 * 1000).toISOString(),
+              attachments: []
             },
             {
               id: 5,
               content: "Los decoradores en Python son funciones que modifican el comportamiento de otras funciones. Permiten ejecutar código antes y después de la función decorada.",
               sender: "assistant",
-              timestamp: new Date(Date.now() - 56 * 60 * 1000).toISOString()
+              timestamp: new Date(Date.now() - 56 * 60 * 1000).toISOString(),
+              attachments: []
             }
           ];
           setAllChatMessages(prev => ({
@@ -230,13 +270,15 @@ const Chat = () => {
               id: 4,
               content: "Estoy teniendo problemas al usar useEffect en React",
               sender: "user",
-              timestamp: new Date(Date.now() - 57 * 60 * 1000).toISOString()
+              timestamp: new Date(Date.now() - 57 * 60 * 1000).toISOString(),
+              attachments: []
             },
             {
               id: 5,
               content: "useEffect es un hook para manejar efectos secundarios. Recuerda incluir todas las dependencias en el array.",
               sender: "assistant",
-              timestamp: new Date(Date.now() - 56 * 60 * 1000).toISOString()
+              timestamp: new Date(Date.now() - 56 * 60 * 1000).toISOString(),
+              attachments: []
             }
           ];
           setAllChatMessages(prev => ({
@@ -252,13 +294,15 @@ const Chat = () => {
               id: 4,
               content: "Necesito implementar JWT en Django para mi API",
               sender: "user",
-              timestamp: new Date(Date.now() - 57 * 60 * 1000).toISOString()
+              timestamp: new Date(Date.now() - 57 * 60 * 1000).toISOString(),
+              attachments: []
             },
             {
               id: 5,
               content: "Para JWT en Django, puedes usar Django REST framework con la librería djangorestframework-simplejwt.",
               sender: "assistant",
-              timestamp: new Date(Date.now() - 56 * 60 * 1000).toISOString()
+              timestamp: new Date(Date.now() - 56 * 60 * 1000).toISOString(),
+              attachments: []
             }
           ];
           setAllChatMessages(prev => ({
@@ -277,18 +321,12 @@ const Chat = () => {
     }
   };
 
-  // Función para cargar todos los mensajes de todos los chats para búsqueda
   const fetchAllChatMessages = async () => {
     setIsSearching(true);
     try {
-      // En producción, idealmente harías una única llamada al backend que devuelva
-      // los mensajes de todos los chats que coinciden con la búsqueda
-      
-      // Para el ejemplo, cargaremos mensajes para los chats que aún no tenemos
       const chatsMissingMessages = chats.filter(chat => !allChatMessages[chat.id]);
       
       const promises = chatsMissingMessages.map(chat => 
-        // En un futuro, reemplazar con llamadas reales
         fetch(`/api/chats/${chat.id}/messages/`, {
           headers: {
             "Content-Type": "application/json",
@@ -300,24 +338,23 @@ const Chat = () => {
             return response.json();
           }
           
-          // Simulación de mensajes diferentes para cada chat
           if (chat.id === 1) {
             return [
-              { id: 1, content: "Hola, ¿en qué puedo ayudarte?", sender: "assistant", timestamp: new Date().toISOString() },
-              { id: 2, content: "Quiero aprender sobre decoradores en Python", sender: "user", timestamp: new Date().toISOString() },
-              { id: 3, content: "Los decoradores son una forma de modificar funciones", sender: "assistant", timestamp: new Date().toISOString() }
+              { id: 1, content: "Hola, ¿en qué puedo ayudarte?", sender: "assistant", timestamp: new Date().toISOString(), attachments: [] },
+              { id: 2, content: "Quiero aprender sobre decoradores en Python", sender: "user", timestamp: new Date().toISOString(), attachments: [] },
+              { id: 3, content: "Los decoradores son una forma de modificar funciones", sender: "assistant", timestamp: new Date().toISOString(), attachments: [] }
             ];
           } else if (chat.id === 2) {
             return [
-              { id: 1, content: "Hola, ¿en qué puedo ayudarte?", sender: "assistant", timestamp: new Date().toISOString() },
-              { id: 2, content: "Tengo problemas con los hooks en React", sender: "user", timestamp: new Date().toISOString() },
-              { id: 3, content: "React hooks permiten usar estado y efectos en componentes funcionales", sender: "assistant", timestamp: new Date().toISOString() }
+              { id: 1, content: "Hola, ¿en qué puedo ayudarte?", sender: "assistant", timestamp: new Date().toISOString(), attachments: [] },
+              { id: 2, content: "Tengo problemas con los hooks en React", sender: "user", timestamp: new Date().toISOString(), attachments: [] },
+              { id: 3, content: "React hooks permiten usar estado y efectos en componentes funcionales", sender: "assistant", timestamp: new Date().toISOString(), attachments: [] }
             ];
           } else {
             return [
-              { id: 1, content: "Hola, ¿en qué puedo ayudarte?", sender: "assistant", timestamp: new Date().toISOString() },
-              { id: 2, content: "¿Cómo implemento JWT en Django?", sender: "user", timestamp: new Date().toISOString() },
-              { id: 3, content: "Para JWT en Django, puedes usar django-rest-framework-simplejwt", sender: "assistant", timestamp: new Date().toISOString() }
+              { id: 1, content: "Hola, ¿en qué puedo ayudarte?", sender: "assistant", timestamp: new Date().toISOString(), attachments: [] },
+              { id: 2, content: "¿Cómo implemento JWT en Django?", sender: "user", timestamp: new Date().toISOString(), attachments: [] },
+              { id: 3, content: "Para JWT en Django, puedes usar django-rest-framework-simplejwt", sender: "assistant", timestamp: new Date().toISOString(), attachments: [] }
             ];
           }
         })
@@ -339,10 +376,57 @@ const Chat = () => {
     }
   };
 
-  // Función para enviar un nuevo mensaje
+  // Función para manejar la selección de archivos
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(prevFiles => [...prevFiles, ...files]);
+  };
+
+  // Función para eliminar un archivo seleccionado
+  const removeSelectedFile = (index) => {
+    setSelectedFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
+  };
+
+  // Función para abrir el selector de archivos
+  const openFileSelector = () => {
+    fileInputRef.current.click();
+  };
+
+  // Función para ver un archivo adjunto
+  const viewAttachment = (attachment) => {
+    setViewingAttachment(attachment);
+    setShowAttachmentModal(true);
+  };
+
+  // Función para obtener el ícono según el tipo de archivo
+  const getFileIcon = (fileType) => {
+    if (fileType.includes('image')) return "image";
+    if (fileType.includes('pdf')) return "file-pdf";
+    if (fileType.includes('word') || fileType.includes('document')) return "file-word";
+    if (fileType.includes('excel') || fileType.includes('spreadsheet')) return "file-excel";
+    if (fileType.includes('zip') || fileType.includes('compressed')) return "file-archive";
+    if (fileType.includes('text')) return "file-alt";
+    if (fileType.includes('audio')) return "file-audio";
+    if (fileType.includes('video')) return "file-video";
+    if (fileType.includes('code') || fileType.includes('javascript') || fileType.includes('html') || fileType.includes('css')) return "file-code";
+    return "file";
+  };
+
+  // Función para formatear el tamaño del archivo
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B';
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    else if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+    else return (bytes / 1073741824).toFixed(1) + ' GB';
+  };
+
+  // Función para enviar un nuevo mensaje con streaming
   const sendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() && selectedFiles.length === 0) return;
+    if (isStreaming) return;
+    
+    messagesJustLoaded.current = false;
     
     const tempId = Date.now();
     const tempMessage = {
@@ -350,81 +434,191 @@ const Chat = () => {
       content: newMessage,
       sender: "user",
       timestamp: new Date().toISOString(),
-      isSending: true
+      isSending: true,
+      attachments: selectedFiles.map((file, index) => ({
+        id: `temp-${tempId}-${index}`,
+        filename: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        temp: true
+      }))
     };
     
-    // Guardar el ID del chat actual para asegurar que seguimos en el mismo chat después de enviar
     const currentChatId = currentChat.id;
     
-    // Indicar que este chat debe moverse al principio de la lista
-    shouldReorderChatsRef.current = true;
-    
-    // Añadir mensaje temporal al estado
     setMessages(prev => [...prev, tempMessage]);
+    const messageContent = newMessage;
     setNewMessage("");
+    const filesToSend = selectedFiles;
+    setSelectedFiles([]);
+    
+    setIsStreaming(true);
     
     try {
-      // En un futuro, reemplazar con una llamada real a la API
+      const formData = new FormData();
+      formData.append("content", messageContent);
+      
+      // Agregar archivos al FormData
+      filesToSend.forEach(file => {
+        formData.append("files", file);
+      });
+      
       const response = await fetch(`/api/chats/${currentChatId}/messages/`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           "X-CSRFToken": cookies.get("csrftoken"),
         },
         credentials: "same-origin",
-        body: JSON.stringify({
-          content: tempMessage.content
-        }),
+        body: formData,
       });
       
       if (response.ok) {
-        const data = await response.json();
+        // Procesar streaming response
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
         
-        // Actualizar el mensaje temporal con los datos reales
+        let assistantMessageId = null;
+        let assistantContent = '';
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') {
+                setIsStreaming(false);
+                break;
+              }
+              
+              try {
+                const parsed = JSON.parse(data);
+                
+                if (parsed.type === 'user_message') {
+                  // Actualizar mensaje del usuario con datos reales
+                  setMessages(prev => 
+                    prev.map(msg => msg.id === tempId ? {
+                      ...parsed.message,
+                      attachments: parsed.message.attachments || []
+                    } : msg)
+                  );
+                } else if (parsed.type === 'assistant_start') {
+                  // Crear mensaje del asistente
+                  assistantMessageId = parsed.message_id;
+                  const assistantMessage = {
+                    id: parsed.message_id,
+                    content: '',
+                    sender: 'assistant',
+                    timestamp: parsed.timestamp,
+                    isStreaming: true,
+                    attachments: []
+                  };
+                  setMessages(prev => [...prev, assistantMessage]);
+                  setStreamingMessageId(parsed.message_id);
+                } else if (parsed.type === 'chunk' && assistantMessageId) {
+                  // Actualizar contenido del mensaje del asistente
+                  assistantContent += parsed.content;
+                  setMessages(prev => prev.map(msg => 
+                    msg.id === assistantMessageId 
+                      ? { ...msg, content: assistantContent }
+                      : msg
+                  ));
+                } else if (parsed.type === 'reset' && assistantMessageId) {
+                  // Reiniciar contenido del asistente
+                  assistantContent = '';
+                  setMessages(prev => prev.map(msg => 
+                    msg.id === assistantMessageId 
+                      ? { ...msg, content: '' }
+                      : msg
+                  ));
+                } else if (parsed.type === 'complete') {
+                  // Finalizar streaming
+                  if (assistantMessageId) {
+                    setMessages(prev => prev.map(msg => 
+                      msg.id === assistantMessageId 
+                        ? { ...msg, isStreaming: false }
+                        : msg
+                    ));
+                  }
+                  
+                  // Actualizar título del chat si cambió
+                  if (parsed.chat_title_updated) {
+                    setCurrentChat(prev => ({
+                      ...prev,
+                      title: parsed.chat_title_updated
+                    }));
+                    
+                    setChats(prev => 
+                      prev.map(chat => 
+                        chat.id === currentChatId 
+                          ? { ...chat, title: parsed.chat_title_updated }
+                          : chat
+                      )
+                    );
+                  }
+                  
+                  // Actualizar la lista de chats: mover el chat actual al principio
+                  const nowTime = new Date().toISOString();
+                  setChats(prev => {
+                    const currentChatIndex = prev.findIndex(chat => chat.id === currentChatId);
+                    if (currentChatIndex === -1) return prev;
+                    
+                    const updatedChats = [...prev];
+                    const updatedChat = {
+                      ...updatedChats[currentChatIndex],
+                      last_message: messageContent.substring(0, 50) + (messageContent.length > 50 ? "..." : ""),
+                      updated_at: nowTime
+                    };
+                    
+                    updatedChats.splice(currentChatIndex, 1);
+                    updatedChats.unshift(updatedChat);
+                    
+                    return updatedChats;
+                  });
+                  
+                  setIsStreaming(false);
+                  setStreamingMessageId(null);
+                }
+              } catch (e) {
+                console.error('Error parsing SSE data:', e);
+              }
+            }
+          }
+        }
+      } else {
+        // Fallback para cuando no hay streaming disponible
+        setIsStreaming(false);
+        
+        // Simulación para testing
         setMessages(prev => 
-          prev.map(msg => msg.id === tempId ? data : msg)
+          prev.map(msg => 
+            msg.id === tempId 
+              ? {
+                  ...msg, 
+                  isSending: false,
+                  attachments: msg.attachments.map(attachment => ({
+                    ...attachment,
+                    url: URL.createObjectURL(filesToSend[msg.attachments.indexOf(attachment)]),
+                    temp: false
+                  }))
+                } 
+              : msg
+          )
         );
         
-        // Actualizar allChatMessages con el nuevo mensaje
-        setAllChatMessages(prev => ({
-          ...prev,
-          [currentChatId]: [...(prev[currentChatId] || []), data]
-        }));
-        
-        // Actualizar la lista de chats: mover el chat actual al principio y actualizar su último mensaje
-        const nowTime = new Date().toISOString();
-        setChats(prev => {
-          // Encontrar el chat actual
-          const currentChatIndex = prev.findIndex(chat => chat.id === currentChatId);
-          if (currentChatIndex === -1) return prev;
-          
-          // Crear una copia del array para no mutar el estado directamente
-          const updatedChats = [...prev];
-          
-          // Actualizar el chat con el último mensaje
-          const updatedChat = {
-            ...updatedChats[currentChatIndex],
-            last_message: tempMessage.content.substring(0, 50) + (tempMessage.content.length > 50 ? "..." : ""),
-            updated_at: nowTime
-          };
-          
-          // Eliminar el chat de su posición actual
-          updatedChats.splice(currentChatIndex, 1);
-          
-          // Insertar el chat actualizado al principio del array
-          updatedChats.unshift(updatedChat);
-          
-          return updatedChats;
-        });
-        
-        // Simular respuesta del asistente (eliminar cuando implemente el backend real)
-        simulateAssistantResponse(currentChatId);
-      } else {
-        // Simular respuesta del asistente para testing
-        simulateAssistantResponse(currentChatId);
+        // Simular respuesta del asistente
+        simulateAssistantResponse(currentChatId, messageContent);
       }
     } catch (error) {
       console.error("Error al enviar el mensaje:", error);
+      setIsStreaming(false);
+      setStreamingMessageId(null);
       // Marcar el mensaje como error
       setMessages(prev => 
         prev.map(msg => 
@@ -436,26 +630,31 @@ const Chat = () => {
     }
   };
 
-  // Función para simular la respuesta del asistente (eliminar cuando implemente el backend real)
-  const simulateAssistantResponse = (chatId) => {
+  const simulateAssistantResponse = (chatId, userMessage) => {
     setTimeout(() => {
+      let responseContent = "Esto es una respuesta simulada. En el futuro, aquí aparecerán las respuestas reales del LLM.";
+      
+      const lastUserMessage = messages.filter(m => m.sender === "user").pop();
+      if (lastUserMessage && lastUserMessage.attachments && lastUserMessage.attachments.length > 0) {
+        const fileNames = lastUserMessage.attachments.map(a => a.filename).join(", ");
+        responseContent += `\n\nVeo que has adjuntado los siguientes archivos: ${fileNames}`;
+      }
+      
       const assistantMessage = {
         id: Date.now(),
-        content: "Esto es una respuesta simulada. En el futuro, aquí aparecerán las respuestas reales del LLM.",
+        content: responseContent,
         sender: "assistant",
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        attachments: []
       };
       
-      // Agregar el mensaje del asistente
       setMessages(prev => [...prev, assistantMessage]);
       
-      // Actualizar allChatMessages con la respuesta del asistente
       setAllChatMessages(prev => ({
         ...prev,
         [chatId]: [...(prev[chatId] || []), assistantMessage]
       }));
       
-      // Actualizar el último mensaje del chat en la lista de chats (sin cambiar el orden)
       setChats(prev => {
         return prev.map(chat => 
           chat.id === chatId 
@@ -468,27 +667,20 @@ const Chat = () => {
       });
     }, 1000);
   };
-
-  // Función para crear un nuevo chat o abrir uno vacío existente
+  
   const createNewChat = async () => {
-    // Comprobar si ya existe un chat vacío
     const emptyChat = chats.find(chat => {
-      // Un chat vacío es aquel que no tiene último mensaje o tiene un array de mensajes vacío
       return !chat.last_message && (!allChatMessages[chat.id] || allChatMessages[chat.id].length === 0);
     });
 
-    // Si ya existe un chat vacío, seleccionarlo en lugar de crear uno nuevo
     if (emptyChat) {
-      // Solo cambiar al chat vacío si no estamos ya en él
       if (!currentChat || currentChat.id !== emptyChat.id) {
         fetchMessages(emptyChat.id);
       }
       return;
     }
 
-    // Si no hay chats vacíos, crear uno nuevo
     try {
-      // En un futuro, reemplazar con una llamada real a la API
       const response = await fetch("/api/chats/", {
         method: "POST",
         headers: {
@@ -504,10 +696,8 @@ const Chat = () => {
       if (response.ok) {
         const data = await response.json();
         
-        // Añadir el nuevo chat al principio de la lista
         setChats(prev => [data, ...prev]);
         
-        // Establecer el nuevo chat como el chat actual
         setCurrentChat(data);
         setMessages([]);
         setAllChatMessages(prev => ({
@@ -515,14 +705,8 @@ const Chat = () => {
           [data.id]: []
         }));
         
-        // Actualizar la URL
         navigate(`/chat/${data.id}`, { replace: true });
-        
-        // Activar la edición para el nuevo chat
-        setEditingChatId(data.id);
-        setEditingChatTitle(data.title);
       } else {
-        // Simulación para testing
         const nowTime = new Date().toISOString();
         const newChat = {
           id: Date.now(),
@@ -533,10 +717,8 @@ const Chat = () => {
           unread_count: 0
         };
         
-        // Añadir el nuevo chat al principio de la lista
         setChats(prev => [newChat, ...prev]);
         
-        // Establecer el nuevo chat como el chat actual
         setCurrentChat(newChat);
         setMessages([]);
         setAllChatMessages(prev => ({
@@ -544,10 +726,8 @@ const Chat = () => {
           [newChat.id]: []
         }));
         
-        // Actualizar la URL
         navigate(`/chat/${newChat.id}`, { replace: true });
         
-        // Activar la edición para el nuevo chat
         setEditingChatId(newChat.id);
         setEditingChatTitle(newChat.title);
       }
@@ -555,21 +735,18 @@ const Chat = () => {
       console.error("Error al crear un nuevo chat:", error);
     }
   };
-
-  // Función para iniciar la edición de un chat
+  
   const startEditingChat = (chat) => {
     setEditingChatId(chat.id);
     setEditingChatTitle(chat.title);
   };
-
-  // Función para guardar el título editado
+  
   const saveEditedTitle = async () => {
     if (!editingChatTitle.trim()) {
       setEditingChatTitle("Nuevo chat");
     }
 
     try {
-      // En un futuro, reemplazar con una llamada real a la API
       const response = await fetch(`/api/chats/${editingChatId}/`, {
         method: "PUT",
         headers: {
@@ -616,14 +793,14 @@ const Chat = () => {
       setEditingChatTitle("");
     }
   };
-
+  
   // Manejar tecla Enter para guardar el título
   const handleEditKeyPress = (e) => {
     if (e.key === 'Enter') {
       saveEditedTitle();
     }
   };
-
+  
   // Filtrar chats según término de búsqueda (incluyendo mensajes anteriores)
   const filteredChats = chats.filter(chat => {
     // Si no hay término de búsqueda, mostrar todos los chats
@@ -642,45 +819,42 @@ const Chat = () => {
     );
   });
   
-  // Formatear la fecha
-// Formatear la fecha y hora de los mensajes
-const formatTimestamp = (timestamp) => {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const yesterday = today - 24 * 60 * 60 * 1000;
-  const dateTime = date.getTime();
+  // Formatear la fecha y hora de los mensajes
+  const formatTimestamp = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterday = today - 24 * 60 * 60 * 1000;
+    const dateTime = date.getTime();
+    
+    // Formato de hora (siempre se muestra)
+    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Si es hoy, solo mostrar la hora
+    if (dateTime >= today) {
+      return timeStr;
+    }
+    
+    // Si es ayer, mostrar "Ayer" y la hora
+    if (dateTime >= yesterday && dateTime < today) {
+      return `Ayer, ${timeStr}`;
+    }
+    
+    // Si es este año, mostrar fecha sin año
+    if (date.getFullYear() === now.getFullYear()) {
+      const dateStr = date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+      return `${dateStr}, ${timeStr}`;
+    }
+    
+    // Si es un año diferente, mostrar fecha completa
+    return `${date.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}, ${timeStr}`;
+  };
   
-  // Formato de hora (siempre se muestra)
-  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  
-  // Si es hoy, solo mostrar la hora
-  if (dateTime >= today) {
-    return timeStr;
-  }
-  
-  // Si es ayer, mostrar "Ayer" y la hora
-  if (dateTime >= yesterday && dateTime < today) {
-    return `Ayer, ${timeStr}`;
-  }
-  
-  // Si es este año, mostrar fecha sin año
-  if (date.getFullYear() === now.getFullYear()) {
-    const dateStr = date.toLocaleDateString([], { day: 'numeric', month: 'short' });
-    return `${dateStr}, ${timeStr}`;
-  }
-  
-  // Si es un año diferente, mostrar fecha completa
-  return `${date.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}, ${timeStr}`;
-};
-
   // Función para cambiar al chat seleccionado
   const selectChat = (chatId) => {
-    if (editingChatId) return; // No cambiar de chat si estamos editando
+    if (editingChatId || isStreaming) return;
     fetchMessages(chatId);
   };
-
-
   
   return (
     <MDBContainer fluid className="py-5 chat-container">
@@ -692,10 +866,25 @@ const formatTimestamp = (timestamp) => {
                 <MDBCol md="6" lg="5" xl="4" className="mb-4 mb-md-0">
                   <div className="p-3">
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="mb-0">Mis Chats</h5>
-                      <MDBBtn color="primary" size="sm" onClick={createNewChat}>
-                        <MDBIcon fas icon="plus" className="me-1" /> Nuevo
-                      </MDBBtn>
+                      <h5 className="mb-0">Mis chats</h5>
+                      <div className="d-flex gap-2">
+                        <MDBBtn 
+                          color="info" 
+                          size="sm" 
+                          onClick={() => navigate('/')}
+                          disabled={isStreaming}
+                        >
+                          <i className="fas fa-home me-1"></i> Dashboard
+                        </MDBBtn>
+                        <MDBBtn 
+                          color="primary" 
+                          size="sm" 
+                          onClick={createNewChat}
+                          disabled={isStreaming}
+                        >
+                          <i className="fas fa-plus me-1"></i> Nuevo
+                        </MDBBtn>
+                      </div>
                     </div>
                     
                     <MDBInputGroup className="rounded mb-3">
@@ -705,16 +894,16 @@ const formatTimestamp = (timestamp) => {
                         type="search"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        disabled={isStreaming}
                       />
                       <span className="input-group-text border-0">
                         {isSearching ? (
                           <MDBSpinner size="sm" />
                         ) : (
-                          <MDBIcon fas icon="search" />
+                          <i className="fas fa-search"></i>
                         )}
                       </span>
                     </MDBInputGroup>
-
                     <div className="chat-list-container">
                       {searchTerm.length > 0 && (
                         <div className="search-info mb-2">
@@ -728,10 +917,12 @@ const formatTimestamp = (timestamp) => {
                           <li key={chat.id} className={`p-2 border-bottom ${currentChat && chat.id === currentChat.id ? 'active-chat' : ''}`}>
                             <div className="d-flex justify-content-between align-items-center">
                               <div className="d-flex flex-row flex-grow-1"
-                                onClick={() => selectChat(chat.id)}>
+                                onClick={() => selectChat(chat.id)}
+                                style={{ cursor: (editingChatId || isStreaming) ? 'not-allowed' : 'pointer' }}
+                              >
                                 <div>
                                   <div className="chat-avatar">
-                                    <MDBIcon fas icon="comment-alt" size="2x" className="text-primary" />
+                                    <i className="fas fa-comment-alt fa-2x text-primary"></i>
                                     {chat.unread_count > 0 && (
                                       <span className="badge bg-success badge-dot"></span>
                                     )}
@@ -758,25 +949,23 @@ const formatTimestamp = (timestamp) => {
                                           saveEditedTitle();
                                         }}
                                       >
-                                        <MDBIcon fas icon="check" />
+                                        <i className="fas fa-check"></i>
                                       </MDBBtn>
                                     </div>
                                   ) : (
                                     <>
                                       <div className="d-flex justify-content-between align-items-center">
                                         <p className="fw-bold mb-0">{chat.title}</p>
-                                        <MDBTooltip tag="a" title="Editar nombre">
-                                          <MDBIcon 
-                                            fas 
-                                            icon="edit" 
-                                            size="sm" 
-                                            className="ms-2 text-muted edit-icon"
+                                        <i 
+                                            className="fas fa-edit fa-sm ms-2 text-muted edit-icon"
+                                            style={{ opacity: isStreaming ? 0.3 : 0.6, cursor: isStreaming ? 'not-allowed' : 'pointer' }}
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              startEditingChat(chat);
+                                              if (!isStreaming) {
+                                                startEditingChat(chat);
+                                              }
                                             }}
                                           />
-                                        </MDBTooltip>
                                       </div>
                                       <p className="small text-muted text-truncate" style={{ maxWidth: "200px" }}>
                                         {chat.last_message || "Nuevo chat"}
@@ -812,7 +1001,7 @@ const formatTimestamp = (timestamp) => {
                         ))}
                         {filteredChats.length === 0 && !isSearching && searchTerm && (
                           <li className="p-3 text-center">
-                            <MDBIcon fas icon="search" className="me-2" />
+                            <i className="fas fa-search me-2"></i>
                             No se encontraron resultados para "{searchTerm}"
                           </li>
                         )}
@@ -820,21 +1009,39 @@ const formatTimestamp = (timestamp) => {
                     </div>
                   </div>
                 </MDBCol>
-
                 <MDBCol md="6" lg="7" xl="8">
                   {currentChat ? (
                     <>
                       <div className="chat-header p-3 border-bottom d-flex justify-content-between align-items-center">
-                        <h6 className="mb-0">{currentChat.title}</h6>
-                        <MDBTooltip tag="a" title="Editar nombre">
-                          <MDBIcon 
-                            fas 
-                            icon="edit" 
-                            size="sm" 
-                            className="ms-2 text-muted edit-icon"
-                            onClick={() => startEditingChat(currentChat)}
-                          />
-                        </MDBTooltip>
+                        {editingChatId === currentChat.id ? (
+                          <div className="d-flex align-items-center flex-grow-1">
+                            <input
+                              ref={editInputRef}
+                              type="text"
+                              className="form-control form-control-sm edit-title-input"
+                              value={editingChatTitle}
+                              onChange={(e) => setEditingChatTitle(e.target.value)}
+                              onKeyPress={handleEditKeyPress}
+                            />
+                            <MDBBtn 
+                              color="success" 
+                              size="sm" 
+                              className="ms-2 save-title-btn"
+                              onClick={saveEditedTitle}
+                            >
+                              <MDBIcon fas icon="check" />
+                            </MDBBtn>
+                          </div>
+                        ) : (
+                          <>
+                            <h6 className="mb-0">{currentChat.title}</h6>
+                            <i 
+                              className="fas fa-edit fa-sm ms-2 text-muted edit-icon"
+                              style={{ opacity: isStreaming ? 0.3 : 0.6, cursor: isStreaming ? 'not-allowed' : 'pointer' }}
+                              onClick={() => !isStreaming && startEditingChat(currentChat)}
+                            />
+                          </>
+                        )}
                       </div>
                       
                       <div className="messages-container pt-3 px-3">
@@ -862,10 +1069,47 @@ const formatTimestamp = (timestamp) => {
                                 } ${msg.isSending ? "opacity-50" : ""} ${msg.error ? "bg-danger" : ""}`}
                                 style={msg.sender === "assistant" ? { backgroundColor: "#f5f6f7" } : {}}
                               >
-                                {msg.content}
+                                {msg.sender === "assistant" ? (
+                                  <div>
+                                    <MarkdownRenderer content={msg.content} />
+                                    {msg.isStreaming && (
+                                      <span className="streaming-cursor">▋</span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  msg.content
+                                )}
                                 {msg.isSending && <span className="ms-2 spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>}
-                                {msg.error && <MDBIcon fas icon="exclamation-circle" className="ms-2" />}
+                                {msg.error && <i className="fas fa-exclamation-circle ms-2"></i>}
                               </p>
+                              
+                              {/* Mostrar los archivos adjuntos si existen */}
+                              {msg.attachments && msg.attachments.length > 0 && (
+                                <div className={`attachments-container ${
+                                  msg.sender === "user" ? "me-3" : "ms-3"
+                                } mb-2`}>
+                                  {msg.attachments.map((attachment, index) => (
+                                    <div 
+                                      key={`${msg.id}-attachment-${index}`} 
+                                      className={`attachment-card ${
+                                        msg.sender === "user" ? "user-attachment" : "assistant-attachment"
+                                      }`}
+                                      onClick={() => viewAttachment(attachment)}
+                                    >
+                                      <i 
+                                        className={`fas ${getFileIcon(attachment.file_type)} fa-lg mb-2`}
+                                      />
+                                      <div className="attachment-name text-truncate">
+                                        {attachment.filename}
+                                      </div>
+                                      <div className="attachment-size">
+                                        {formatFileSize(attachment.file_size)}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
                               <p
                                 className={`small ${
                                   msg.sender === "user" ? "me-3" : "ms-3"
@@ -889,38 +1133,127 @@ const formatTimestamp = (timestamp) => {
                         <div ref={messagesEndRef} />
                       </div>
                       
-                      <div className="text-muted d-flex justify-content-start align-items-center pe-3 pt-3 mt-2">
-                        <img
-                          src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava6-bg.webp"
-                          alt="avatar"
-                          style={{ width: "40px", height: "100%" }}
-                        />
-                        <input
-                          type="text"
-                          className="form-control form-control-lg"
-                          placeholder="Escribe tu mensaje..."
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && sendMessage(e)}
-                        />
-                        <a className="ms-1 text-muted" href="#!">
-                          <MDBIcon fas icon="paperclip" />
-                        </a>
-                        <a className="ms-3 text-muted" href="#!">
-                          <MDBIcon fas icon="smile" />
-                        </a>
-                        <a className="ms-3" href="#!" onClick={sendMessage}>
-                          <MDBIcon fas icon="paper-plane" />
-                        </a>
+                      {/* Área de entrada de mensaje con archivos seleccionados */}
+                      <div className="message-input-area">
+                        {/* Mostrar archivos seleccionados si existen */}
+                        {selectedFiles.length > 0 && (
+                          <div className="selected-files-container">
+                            <div className="selected-files-header">
+                              <h6 className="mb-0">Archivos seleccionados ({selectedFiles.length})</h6>
+                            </div>
+                            <div className="selected-files-list">
+                              {selectedFiles.map((file, index) => (
+                                <div key={`selected-file-${index}`} className="selected-file-item">
+                                  <div className="file-info">
+                                    <i className={`fas ${getFileIcon(file.type)} me-2`}></i>
+                                    <div className="file-details">
+                                      <div className="file-name text-truncate">{file.name}</div>
+                                      <div className="file-size">{formatFileSize(file.size)}</div>
+                                    </div>
+                                  </div>
+                                  <MDBBtn 
+                                    color="light" 
+                                    size="sm" 
+                                    floating 
+                                    className="remove-file-btn"
+                                    onClick={() => removeSelectedFile(index)}
+                                    disabled={isStreaming}
+                                  >
+                                    <i className="fas fa-times"></i>
+                                  </MDBBtn>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Indicador de streaming */}
+                        {isStreaming && (
+                          <div className="streaming-indicator">
+                            <div className="d-flex align-items-center text-muted">
+                              <MDBSpinner size="sm" className="me-2" />
+                              <small>El asistente está escribiendo...</small>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Área de entrada de mensaje */}
+                        <div className="text-muted d-flex justify-content-start align-items-center pe-3 pt-3 mt-2">
+                          <img
+                            src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava6-bg.webp"
+                            alt="avatar"
+                            style={{ width: "40px", height: "100%" }}
+                          />
+                          <input
+                            type="text"
+                            className="form-control form-control-lg"
+                            placeholder={isStreaming ? "Esperando respuesta..." : "Escribe tu mensaje..."}
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && !isStreaming && sendMessage(e)}
+                            disabled={isStreaming}
+                          />
+                          
+                          {/* Input de archivo oculto */}
+                          <input
+                            type="file"
+                            multiple
+                            ref={fileInputRef}
+                            style={{ display: 'none' }}
+                            onChange={handleFileSelect}
+                          />
+                          
+                          {/* Botón para adjuntar archivos */}
+                          <a 
+                            className={`ms-1 text-muted ${isStreaming ? 'disabled' : ''}`} 
+                            href="#!" 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (!isStreaming) {
+                                openFileSelector();
+                              }
+                            }}
+                          >
+                            <i className="fas fa-paperclip"></i>
+                            {selectedFiles.length > 0 && (
+                              <MDBBadge color="danger" dot pill className="attachment-badge" />
+                            )}
+                          </a>
+                          <a className={`ms-3 text-muted ${isStreaming ? 'disabled' : ''}`} href="#!">
+                            <i className="fas fa-smile"></i>
+                          </a>
+                          <a 
+                            className={`ms-3 ${isStreaming ? 'text-muted disabled' : ''}`} 
+                            href="#!" 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (!isStreaming) {
+                                sendMessage(e);
+                              }
+                            }}
+                          >
+                            {isStreaming ? (
+                              <MDBSpinner size="sm" />
+                            ) : (
+                              <i className="fas fa-paper-plane"></i>
+                            )}
+                          </a>
+                        </div>
                       </div>
                     </>
                   ) : (
                     <div className="d-flex justify-content-center align-items-center h-100">
                       <div className="text-center">
-                        <MDBIcon fas icon="comments" size="3x" className="text-primary mb-3" />
+                        <i className="fas fa-comments fa-3x text-primary mb-3"></i>
                         <h5>Selecciona un chat o crea uno nuevo</h5>
-                        <MDBBtn color="primary" size="sm" className="mt-3" onClick={createNewChat}>
-                          <MDBIcon fas icon="plus" className="me-1" /> Nuevo Chat
+                        <MDBBtn 
+                          color="primary" 
+                          size="sm" 
+                          className="mt-3" 
+                          onClick={createNewChat}
+                          disabled={isStreaming}
+                        >
+                          <i className="fas fa-plus me-1"></i> Nuevo Chat
                         </MDBBtn>
                       </div>
                     </div>
@@ -931,6 +1264,56 @@ const formatTimestamp = (timestamp) => {
           </MDBCard>
         </MDBCol>
       </MDBRow>
+      
+      {/* Modal para ver archivos adjuntos */}
+      <MDBModal show={showAttachmentModal} tabIndex='-1' setShow={setShowAttachmentModal}>
+        <MDBModalDialog centered>
+          <MDBModalContent>
+            <MDBModalHeader>
+              <MDBModalTitle>
+                {viewingAttachment?.filename || 'Visualización de archivo'}
+              </MDBModalTitle>
+              <MDBBtn 
+                className='btn-close' 
+                color='none' 
+                onClick={() => setShowAttachmentModal(false)}
+              ></MDBBtn>
+            </MDBModalHeader>
+            <MDBModalBody>
+              {viewingAttachment && (
+                <div className="attachment-preview">
+                  {viewingAttachment.file_type.includes('image') ? (
+                    <img 
+                      src={viewingAttachment.url} 
+                      alt={viewingAttachment.filename}
+                      className="img-fluid"
+                    />
+                  ) : (
+                    <div className="file-info-large text-center">
+                      <i 
+                        className={`fas ${getFileIcon(viewingAttachment.file_type)} fa-5x mb-3`}
+                      />
+                      <h5>{viewingAttachment.filename}</h5>
+                      <p>{formatFileSize(viewingAttachment.file_size)}</p>
+                      <p className="text-muted">{viewingAttachment.file_type}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </MDBModalBody>
+            <MDBModalFooter>
+              <MDBBtn color='secondary' onClick={() => setShowAttachmentModal(false)}>
+                Cerrar
+              </MDBBtn>
+              {viewingAttachment && viewingAttachment.url && (
+                <MDBBtn color='primary' tag="a" href={viewingAttachment.url} target="_blank" rel="noopener noreferrer" download={viewingAttachment.filename}>
+                  Descargar
+                </MDBBtn>
+              )}
+            </MDBModalFooter>
+          </MDBModalContent>
+        </MDBModalDialog>
+      </MDBModal>
     </MDBContainer>
   );
 };

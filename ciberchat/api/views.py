@@ -7,6 +7,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
+from django.contrib.auth.models import User
+from django.db import IntegrityError
 
 @require_POST
 def login_view(request):
@@ -41,14 +43,6 @@ def whoami_view(request):
     if not request.user.is_authenticated:
         return JsonResponse({"isAuthenticated": False})
     return JsonResponse({"username": request.user.username})
-
-
-# Agrega esto a tu archivo views.py existente
-import json
-from django.contrib.auth.models import User
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.db import IntegrityError
 
 @require_POST
 def register_view(request):

@@ -48,6 +48,7 @@
   height: 40px;
   border-radius: 50%;
   transition: all 0.2s;
+  position: relative;
 }
 
 .text-muted.d-flex a:hover {
@@ -143,6 +144,174 @@
   padding: 0.25rem 0.5rem;
 }
 
+/* Estilos para archivos adjuntos */
+.attachments-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.attachment-card {
+  width: 100px;
+  min-width: 100px;
+  height: 110px;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  overflow: hidden;
+}
+
+.user-attachment {
+  background-color: rgba(18, 102, 241, 0.1);
+}
+
+.assistant-attachment {
+  background-color: #f1f1f1;
+}
+
+.attachment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.attachment-name {
+  font-size: 0.8rem;
+  width: 100%;
+  text-align: center;
+  margin-top: 5px;
+  word-break: break-word;
+}
+
+.attachment-size {
+  font-size: 0.7rem;
+  color: #6c757d;
+  margin-top: 2px;
+}
+
+.message-input-area {
+  position: relative;
+}
+
+.selected-files-container {
+  border-top: 1px solid #e0e0e0;
+  padding: 10px 15px;
+  background-color: #f8f9fa;
+}
+
+.selected-files-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.selected-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.selected-file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-radius: 5px;
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.file-details {
+  margin-left: 8px;
+  overflow: hidden;
+}
+
+.file-name {
+  font-size: 0.85rem;
+  max-width: 200px;
+}
+
+.file-size {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.remove-file-btn {
+  font-size: 0.8rem;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+}
+
+.attachment-preview {
+  max-height: 60vh;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-info-large {
+  padding: 20px;
+}
+
+.attachment-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+}
+
+.streaming-cursor {
+  animation: blink 1s infinite;
+  color: #1266f1;
+  font-weight: bold;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  0%, 50% { 
+    opacity: 1; 
+  }
+  51%, 100% { 
+    opacity: 0; 
+  }
+}
+
+.streaming-indicator {
+  padding: 8px 15px;
+  border-top: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
+  display: flex;
+  align-items: center;
+}
+
+.streaming-indicator .spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+.d-flex.gap-2 {
+  gap: 0.5rem !important;
+}
+
+
 @media (max-width: 767px) {
   .messages-container {
     height: 300px;
@@ -156,8 +325,21 @@
     width: 100%;
     margin: 10px 0;
   }
-
   .edit-title-input {
     max-width: 120px;
+  }
+  
+  .attachment-card {
+    width: 80px;
+    height: 90px;
+  }
+  
+  .file-name {
+    max-width: 150px;
+  }
+
+  .d-flex.gap-2 {
+    flex-direction: column;
+    gap: 0.25rem !important;
   }
 }

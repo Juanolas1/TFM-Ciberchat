@@ -1,0 +1,123 @@
+.markdown-body {
+    color: inherit;
+    line-height: 1.5;
+    word-wrap: break-word;
+    white-space: normal;
+  }
+  
+  .markdown-body .md-h1,
+  .markdown-body .md-h2,
+  .markdown-body .md-h3,
+  .markdown-body .md-h4 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+  
+  .markdown-body .md-h1 {
+    font-size: 1.5em;
+  }
+  
+  .markdown-body .md-h2 {
+    font-size: 1.3em;
+  }
+  
+  .markdown-body .md-h3 {
+    font-size: 1.1em;
+  }
+  
+  .markdown-body .md-h4 {
+    font-size: 1em;
+  }
+  
+  .markdown-body .md-bold {
+    font-weight: 600;
+  }
+  
+  .markdown-body .md-italic {
+    font-style: italic;
+  }
+  
+  .markdown-body a {
+    color: #1266f1;
+    text-decoration: underline;
+  }
+  
+  .markdown-body a:hover {
+    text-decoration: none;
+  }
+  
+  .markdown-body ul,
+  .markdown-body ol {
+    padding-left: 2em;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+  
+  .markdown-body li {
+    margin-bottom: 0.25em;
+  }
+  
+  .markdown-body p {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+  
+  .markdown-body blockquote {
+    padding: 0.25em 1em;
+    border-left: 4px solid #e0e0e0;
+    color: #6c757d;
+    margin: 0.5em 0;
+  }
+  
+  .markdown-body code {
+    padding: 0.2em 0.4em;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+    font-family: monospace;
+  }
+  
+  .markdown-body pre {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 5px;
+    padding: 1em;
+    overflow-x: auto;
+    margin: 0.5em 0;
+  }
+  
+  .markdown-body pre code {
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+    white-space: pre;
+  }
+  
+  .markdown-body hr {
+    height: 0.25em;
+    padding: 0;
+    margin: 1.5em 0;
+    background-color: #e0e0e0;
+    border: 0;
+  }
+  
+  .markdown-body img {
+    max-width: 100%;
+  }
+  
+  .markdown-body table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+  }
+  
+  .markdown-body table th,
+  .markdown-body table td {
+    border: 1px solid #e0e0e0;
+    padding: 0.5em;
+  }
+  
+  .markdown-body table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+  }

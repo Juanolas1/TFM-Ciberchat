@@ -9,8 +9,14 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import os
 from pathlib import Path
+from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -137,3 +143,24 @@ SESSION_COOKIE_HTTPONLY = True
 STATICFILES_DIRS = (
     BASE_DIR.joinpath('frontend','dist'),   
 )
+
+
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
+ELASTICSEARCH_HOST="http://localhost:9200"
+
+
+# ─── ELASTICSEARCH ──────────────────────────────────────────────────────────────
+ELASTICSEARCH_HOST = os.getenv("ELASTICSEARCH_HOST", "http://localhost:9200")
+
+# Dimensión del embedding
+EMBEDDING_DIM = 384
+
+# Nombre del índice
+ES_INDEX_NAME = "rag_guardian"
+
+# HuggingFace model para embeddings
+EMBED_MODEL_NAME   = "sentence-transformers/all-MiniLM-L6-v2"
+

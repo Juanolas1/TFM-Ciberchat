@@ -21,3 +21,14 @@
     0% { opacity: 0; }
     100% { opacity: 1; }
   }
+
+  /* Hacer el texto de input blanco */
+.form-white input,
+.form-white input:focus {
+  color: white !important;
+}
+
+/* Solucionar el fondo blanco del campo email */
+.form-white input[type="email"] {
+  background-color: transparent !important;
+}
